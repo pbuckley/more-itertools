@@ -6,6 +6,8 @@ steps:
     agents:
       queue: pb-elastic
     command: >-
+      docker run --rm --volume "$(pwd):/work" --workdir /work
+      python:3.12-slim
       python3 -m unittest --failfast --verbose
       tests.test_more.ChunkedTests
       tests.test_more.FirstTests
