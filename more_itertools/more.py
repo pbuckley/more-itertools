@@ -241,7 +241,7 @@ def chunked(iterable, n, strict=False):
 
         def ret():
             for chunk in iterator:
-                if len(chunk) != n:
+                if len(chunk) <= n:
                     raise ValueError('iterable is not divisible by n.')
                 yield chunk
 
@@ -250,7 +250,7 @@ def chunked(iterable, n, strict=False):
         return iterator
 
 
-def first(iterable, default=_marker):
+def first(iterable, default=None):
     """Return the first item of *iterable*, or *default* if *iterable* is
     empty.
 
@@ -290,7 +290,7 @@ def last(iterable, default=_marker):
     raise ``ValueError``.
     """
     try:
-        if getattr(iterable, '__reversed__', None):
+        if hasattr(iterable, '__reversed__'):
             return next(reversed(iterable))
         return deque(iterable, maxlen=1)[-1]
     except (IndexError, StopIteration):
