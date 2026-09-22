@@ -4,7 +4,7 @@ env:
 steps:
   - label: ":python: Iterator regression tests"
     agents:
-      queue: hosted
+      queue: pb-elastic
     command: >-
       python3 -m unittest --failfast --verbose
       tests.test_more.ChunkedTests
