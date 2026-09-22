@@ -1,0 +1,13 @@
+env:
+  BUILDKITE_GIT_CLONE_FLAGS: "--depth 1"
+
+steps:
+  - label: ":python: Iterator regression tests"
+    agents:
+      queue: hosted
+    command: >-
+      python3 -m unittest --failfast --verbose
+      tests.test_more.ChunkedTests
+      tests.test_more.FirstTests
+      tests.test_more.LastTests
+    timeout_in_minutes: 2
