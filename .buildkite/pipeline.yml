@@ -50,10 +50,10 @@ steps:
     depends_on: quality
     steps:
       - <<: *job
-        label: ":python: Iterator suite + doctests"
+        label: ":python: Iterator API tests"
         key: iterators
       - <<: *job
-        label: ":python: Recipe suite + doctests"
+        label: ":python: Recipe API tests"
         key: recipes
 
   - group: ":package: Build distributions"

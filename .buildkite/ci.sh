@@ -50,9 +50,12 @@ run_stage() {
       python -c 'import json; data = json.load(open("reports/secrets.json")); count = sum(map(len, data["results"].values())); print(f"Source secret scan: {count} findings"); raise SystemExit(bool(count))'
       ;;
     iterators|recipes)
-      module=tests.test_more
-      if [ "$stage" = recipes ]; then module=tests.test_recipes; fi
-      COVERAGE_CORE=sysmon coverage run --source=more_itertools -m unittest --failfast "$module"
+      if [ "$stage" = iterators ]; then
+        tests=(tests.test_more.{ChunkedTests,FirstTests,LastTests,PeekableTests,WindowedTests,BucketTests,TestCollapse,SlicedTests,SplitAtTests,TestAlwaysIterable})
+      else
+        tests=(tests.test_recipes.{TakeTests,NthTests,FlattenTests,GrouperTests,RoundrobinTests,PartitionTests,UniqueEverseenTests,UniqueJustseenTests,FirstTrueTests,BeforeAndAfterTests})
+      fi
+      COVERAGE_CORE=sysmon coverage run --source=more_itertools -m unittest --failfast "${tests[@]}"
       coverage report > "reports/coverage-$stage.txt"
       cat "reports/coverage-$stage.txt"
       ;;
