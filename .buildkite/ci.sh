@@ -62,6 +62,8 @@ run_stage() {
     wheel|sdist)
       python -m build --no-isolation "--$stage"
       buildkite-agent artifact upload "dist/*"
+      artifact=(dist/*)
+      buildkite-agent meta-data set "$stage-artifact" "${artifact[0]}"
       ;;
     install)
       buildkite-agent artifact download 'dist/*.whl' . --step wheel

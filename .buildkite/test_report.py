@@ -1,4 +1,5 @@
 import unittest
+from subprocess import CompletedProcess
 from unittest.mock import patch
 
 from report import STAGES, complete, main, render, statuses_for
@@ -11,11 +12,17 @@ def snapshot(state='finished', outcome='passed'):
 class ReportTests(unittest.TestCase):
     def test_all_checks_must_pass(self):
         statuses = statuses_for(snapshot())
-        markdown, style = render(statuses)
+        markdown, style = render(
+            statuses,
+            artifacts={'wheel': 'dist/more_itertools-12.0-py3-none-any.whl'},
+        )
         self.assertEqual(style, 'success')
         self.assertIn('11/11 checks passed', markdown)
         self.assertIn('VERIFIED', markdown)
-        self.assertIn('artifact://dist/*.whl', markdown)
+        self.assertIn(
+            'artifact://dist/more_itertools-12.0-py3-none-any.whl', markdown
+        )
+        self.assertNotIn('artifact://dist/*', markdown)
         self.assertTrue(complete(statuses))
 
     def test_failed_gate_blocks_descendants_but_waits_for_siblings(self):
@@ -96,6 +103,13 @@ class ReportTests(unittest.TestCase):
             ),
             patch('report.time.sleep', side_effect=lambda _: snapshots.pop(0)),
             patch('report.publish') as publish,
+            patch(
+                'report.subprocess.run',
+                side_effect=[
+                    CompletedProcess([], 0, stdout='dist/example.whl\n'),
+                    CompletedProcess([], 0, stdout='dist/example.tar.gz\n'),
+                ],
+            ),
         ):
             main()
         self.assertEqual(publish.call_count, 2)
@@ -104,6 +118,13 @@ class ReportTests(unittest.TestCase):
         )
         self.assertTrue(complete(publish.call_args_list[1].args[0]))
         self.assertNotIn('report', publish.call_args.args[0])
+        self.assertEqual(
+            publish.call_args.kwargs['artifacts'],
+            {
+                'wheel': 'dist/example.whl',
+                'sdist': 'dist/example.tar.gz',
+            },
+        )
 
     def test_timeout_publishes_stale_status_and_exits(self):
         with (
