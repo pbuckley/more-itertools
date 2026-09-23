@@ -46,9 +46,9 @@ def render(states):
     return '\n'.join(lines) + '\n', 'success' if success else 'error'
 
 
-def state_for(key):
+def outcome_for(key):
     result = subprocess.run(
-        ['buildkite-agent', 'step', 'get', 'state', '--step', key],
+        ['buildkite-agent', 'step', 'get', 'outcome', '--step', key],
         check=True,
         capture_output=True,
         text=True,
@@ -58,7 +58,7 @@ def state_for(key):
 
 def main():
     with ThreadPoolExecutor(max_workers=4) as pool:
-        states = dict(zip(STAGES, pool.map(state_for, STAGES)))
+        states = dict(zip(STAGES, pool.map(outcome_for, STAGES)))
     markdown, style = render(states)
     Path('reports/summary.md').write_text(markdown)
     Path('reports/summary.json').write_text(
