@@ -241,7 +241,7 @@ def chunked(iterable, n, strict=False):
 
         def ret():
             for chunk in iterator:
-                if len(chunk) <= n:
+                if len(chunk) != n:
                     raise ValueError('iterable is not divisible by n.')
                 yield chunk
 
