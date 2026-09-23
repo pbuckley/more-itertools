@@ -1,7 +1,6 @@
 __lazy_modules__ = frozenset({'queue', 'threading'})
 
 import math
-import os
 import types
 
 from collections import Counter, defaultdict, deque
