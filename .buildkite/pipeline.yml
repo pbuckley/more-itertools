@@ -1,36 +1,85 @@
 steps:
-  - &iterator-tests
-    label: ":package: Chunking"
-    key: chunking
-    env:
-      TEST_CLASS: tests.test_more.ChunkedTests
+  - &job
+    label: ":git: Prepare source & tools"
+    key: prepare
     agents:
       queue: pb-elastic
     plugins:
-      - thedyrt/skip-checkout#v0.1.1:
-          cd: /var/lib/buildkite-agent/repos/more-itertools
-    concurrency: 1
-    concurrency_group: pbuckley/more-itertools-demo
+      - thedyrt/skip-checkout#v0.1.1: {}
+    timeout_in_minutes: 5
     command: |
       set -euo pipefail
-      git diff --quiet HEAD || { echo "Pre-staged clone has tracked changes; refusing to overwrite them."; exit 1; }
+      cache=/var/lib/buildkite-agent/repos/more-itertools
+      work=$(mktemp -d)
+      trap 'rm -rf "$$work"' EXIT
       ref="$$BUILDKITE_COMMIT"
       if [ "$$ref" = HEAD ]; then ref="$$BUILDKITE_BRANCH"; fi
-      git fetch --no-tags origin "$$ref"
-      git checkout --detach FETCH_HEAD
-      python3.12 -m unittest --failfast --verbose "$$TEST_CLASS"
-    timeout_in_minutes: 2
+      if [ "$$BUILDKITE_STEP_KEY" != prepare ]; then
+        ref=$(buildkite-agent meta-data get source-commit --default "$$ref")
+      fi
+      (
+        flock 9
+        git -C "$$cache" fetch --no-tags origin "$$ref"
+        git -C "$$cache" archive FETCH_HEAD | tar -x -C "$$work"
+        if [ "$$BUILDKITE_STEP_KEY" = prepare ]; then
+          buildkite-agent meta-data set source-commit "$(git -C "$$cache" rev-parse FETCH_HEAD)"
+        fi
+      ) 9>"$$cache/.git/demo-snapshot.lock"
+      cd "$$work"
+      bash .buildkite/ci.sh "$$BUILDKITE_STEP_KEY"
 
-  - <<: *iterator-tests
-    label: ":arrow_forward: First item"
-    key: first-item
-    depends_on: chunking
-    env:
-      TEST_CLASS: tests.test_more.FirstTests
+  - group: ":mag: Quality & security"
+    key: quality
+    depends_on: prepare
+    steps:
+      - <<: *job
+        label: ":ruff: Lint"
+        key: lint
+      - <<: *job
+        label: ":straight_ruler: Formatting"
+        key: format
+      - <<: *job
+        label: ":label: Type-stub contracts"
+        key: types
+      - <<: *job
+        label: ":lock: Source secret scan"
+        key: secrets
 
-  - <<: *iterator-tests
-    label: ":fast_forward: Last item"
-    key: last-item
-    depends_on: first-item
-    env:
-      TEST_CLASS: tests.test_more.LastTests
+  - group: ":test_tube: Tests & coverage"
+    key: tests
+    depends_on: quality
+    steps:
+      - <<: *job
+        label: ":python: Iterator suite + doctests"
+        key: iterators
+      - <<: *job
+        label: ":python: Recipe suite + doctests"
+        key: recipes
+
+  - group: ":package: Build distributions"
+    key: packages
+    depends_on: tests
+    steps:
+      - <<: *job
+        label: ":wheel: Build wheel"
+        key: wheel
+      - <<: *job
+        label: ":package: Build source distribution"
+        key: sdist
+
+  - group: ":white_check_mark: Release verification"
+    key: verification
+    depends_on: packages
+    steps:
+      - <<: *job
+        label: ":microscope: Installed-wheel smoke test"
+        key: install
+      - <<: *job
+        label: ":page_facing_up: Metadata & checksums"
+        key: metadata
+
+  - <<: *job
+    label: ":memo: Publish build report"
+    key: report
+    depends_on: [prepare, quality, tests, packages, verification]
+    allow_dependency_failure: true
