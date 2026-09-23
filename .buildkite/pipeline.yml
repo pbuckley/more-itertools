@@ -28,6 +28,14 @@ steps:
       cd "$$work"
       bash .buildkite/ci.sh "$$BUILDKITE_STEP_KEY"
 
+  - <<: *job
+    label: ":satellite: Live release dashboard"
+    key: report
+    depends_on: prepare
+    allow_dependency_failure: true
+    priority: 1
+    timeout_in_minutes: 10
+
   - group: ":mag: Quality & security"
     key: quality
     depends_on: prepare
@@ -77,9 +85,3 @@ steps:
       - <<: *job
         label: ":page_facing_up: Metadata & checksums"
         key: metadata
-
-  - <<: *job
-    label: ":memo: Publish build report"
-    key: report
-    depends_on: [prepare, quality, tests, packages, verification]
-    allow_dependency_failure: true
