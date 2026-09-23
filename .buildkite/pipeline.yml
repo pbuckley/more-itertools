@@ -14,9 +14,7 @@ steps:
       if [ "$$ref" = HEAD ]; then ref="$$BUILDKITE_BRANCH"; fi
       git fetch --no-tags origin "$$ref"
       git checkout --detach FETCH_HEAD
-      docker run --rm --volume "$(pwd):/work" --workdir /work \
-        python:3.12-slim \
-        python3 -m unittest --failfast --verbose \
+      python3.12 -m unittest --failfast --verbose \
         tests.test_more.ChunkedTests \
         tests.test_more.FirstTests \
         tests.test_more.LastTests
