@@ -77,7 +77,8 @@ def complete(statuses):
     return all(statuses.get(key) in TERMINAL for key in STAGES)
 
 
-def render(statuses, updated='just now', notice=''):
+def render(statuses, updated='just now', notice='', artifacts=None):
+    artifacts = artifacts or {}
     counts = {
         status: sum(statuses.get(key) == status for key in STAGES)
         for status in STATUS
@@ -175,12 +176,12 @@ def render(statuses, updated='just now', notice=''):
     for key, path, label in [
         ('iterators', 'reports/coverage-iterators.txt', 'Iterator coverage'),
         ('recipes', 'reports/coverage-recipes.txt', 'Recipe coverage'),
-        ('wheel', 'dist/*.whl', 'Wheel ↓'),
-        ('sdist', 'dist/*.tar.gz', 'Source ↓'),
+        ('wheel', artifacts.get('wheel'), 'Wheel ↓'),
+        ('sdist', artifacts.get('sdist'), 'Source ↓'),
         ('metadata', 'reports/checksums.txt', 'Checksums'),
     ]:
-        if statuses.get(key) == 'passed':
-            links.append(f'<a href="artifact://{path}">{label}</a>')
+        if statuses.get(key) == 'passed' and path:
+            links.append(f'<a href="artifact://{escape(path)}">{label}</a>')
     if links:
         lines.append(
             '<div class="mb2">' + ' &nbsp; · &nbsp; '.join(links) + '</div>'
@@ -209,9 +210,9 @@ def step_for(key):
     return {'state': step['state'], 'outcome': step['outcome']}
 
 
-def publish(statuses, notice=''):
+def publish(statuses, notice='', artifacts=None):
     updated = datetime.now(timezone.utc).strftime('%H:%M:%S UTC')
-    markdown, style = render(statuses, updated, notice)
+    markdown, style = render(statuses, updated, notice, artifacts)
     Path('reports/summary.md').write_text(markdown)
     Path('reports/summary.json').write_text(
         json.dumps(
@@ -246,12 +247,28 @@ def publish(statuses, notice=''):
 def main():
     deadline = time.monotonic() + 540
     statuses = {}
+    artifacts = {}
     with ThreadPoolExecutor(max_workers=4) as pool:
         try:
             while time.monotonic() < deadline:
                 steps = dict(zip(STAGES, pool.map(step_for, STAGES)))
                 statuses = statuses_for(steps)
-                publish(statuses)
+                for key in ('wheel', 'sdist'):
+                    if statuses[key] == 'passed' and key not in artifacts:
+                        result = subprocess.run(
+                            [
+                                'buildkite-agent',
+                                'meta-data',
+                                'get',
+                                f'{key}-artifact',
+                            ],
+                            check=True,
+                            capture_output=True,
+                            text=True,
+                            timeout=20,
+                        )
+                        artifacts[key] = result.stdout.strip()
+                publish(statuses, artifacts=artifacts)
                 if complete(statuses):
                     return
                 time.sleep(3)
