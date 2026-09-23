@@ -1,5 +1,9 @@
 steps:
-  - label: ":python: Iterator regression tests"
+  - &iterator-tests
+    label: ":package: Chunking"
+    key: chunking
+    env:
+      TEST_CLASS: tests.test_more.ChunkedTests
     agents:
       queue: pb-elastic
     plugins:
@@ -14,8 +18,19 @@ steps:
       if [ "$$ref" = HEAD ]; then ref="$$BUILDKITE_BRANCH"; fi
       git fetch --no-tags origin "$$ref"
       git checkout --detach FETCH_HEAD
-      python3.12 -m unittest --failfast --verbose \
-        tests.test_more.ChunkedTests \
-        tests.test_more.FirstTests \
-        tests.test_more.LastTests
+      python3.12 -m unittest --failfast --verbose "$$TEST_CLASS"
     timeout_in_minutes: 2
+
+  - <<: *iterator-tests
+    label: ":arrow_forward: First item"
+    key: first-item
+    depends_on: chunking
+    env:
+      TEST_CLASS: tests.test_more.FirstTests
+
+  - <<: *iterator-tests
+    label: ":fast_forward: Last item"
+    key: last-item
+    depends_on: first-item
+    env:
+      TEST_CLASS: tests.test_more.LastTests
