@@ -36,7 +36,7 @@ def render(states):
     ]
     lines += ['| Check | Result |', '| --- | --- |']
     for key, label in STAGES.items():
-        state = states.get(key, 'unknown')
+        state = states.get(key, 'unknown') or 'not_run'
         lines.append(f'| {label} | {state} |')
     lines += [
         '',

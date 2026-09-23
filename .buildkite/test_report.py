@@ -10,13 +10,13 @@ class ReportTests(unittest.TestCase):
         self.assertIn('11/11 checks passed', markdown)
 
     def test_failure_and_unrun_checks_are_not_green(self):
-        states = dict.fromkeys(STAGES, 'dependency_failed')
+        states = dict.fromkeys(STAGES, '')
         states.update(prepare='passed', lint='hard_failed')
         markdown, style = render(states)
         self.assertEqual(style, 'error')
         self.assertIn('1/11 checks passed', markdown)
         self.assertIn('| Lint | hard_failed |', markdown)
-        self.assertIn('| Build wheel | dependency_failed |', markdown)
+        self.assertIn('| Build wheel | not_run |', markdown)
 
     def test_missing_check_is_not_green(self):
         states = dict.fromkeys(STAGES, 'passed')
