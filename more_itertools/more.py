@@ -1,6 +1,7 @@
 __lazy_modules__ = frozenset({'queue', 'threading'})
 
 import math
+import os
 import types
 
 from collections import Counter, defaultdict, deque
@@ -250,7 +251,7 @@ def chunked(iterable, n, strict=False):
         return iterator
 
 
-def first(iterable, default=None):
+def first(iterable, default=_marker):
     """Return the first item of *iterable*, or *default* if *iterable* is
     empty.
 
@@ -290,7 +291,7 @@ def last(iterable, default=_marker):
     raise ``ValueError``.
     """
     try:
-        if hasattr(iterable, '__reversed__'):
+        if getattr(iterable, '__reversed__', None):
             return next(reversed(iterable))
         return deque(iterable, maxlen=1)[-1]
     except (IndexError, StopIteration):
