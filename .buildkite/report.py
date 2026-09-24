@@ -124,11 +124,11 @@ def render(statuses, updated='just now', notice='', artifacts=None):
     lines = [
         '<div class="p2">',
         '<div class="flex items-center justify-between flex-wrap mb2">',
-        '<div><div class="h6 caps navy bold">more-itertools / release checks</div>',
-        f'<div class="h2 bold mt1">{title}</div></div>',
-        f'<span class="bg-{color} white rounded px2 py1 bold h6">{badge}</span></div>',
+        '<div><div class="h6 caps navy bold m0">more-itertools / release checks</div>',
+        f'<div class="h3 bold m0 mt1">{title}</div></div>',
+        f'<span class="bg-{color} white rounded px2 py1 bold h6 m0">{badge}</span></div>',
         '<div class="flex items-baseline flex-wrap mb2">',
-        f'<span class="h2 bold mr3">{passed}/{len(STAGES)} checks passed</span>',
+        f'<span class="h3 bold m0 mr2">{passed}/{len(STAGES)} checks passed</span>',
         f'<span class="blue mr2">◉ {counts["running"]} running</span>',
         f'<span class="red mr2">✕ {counts["failed"]} failed</span>',
         f'<span class="navy">↳ {counts["blocked"]} blocked</span></div>',
@@ -148,16 +148,16 @@ def render(statuses, updated='just now', notice='', artifacts=None):
     for index, (heading, group) in enumerate(GROUPS.items(), 1):
         group_passed = sum(statuses.get(key) == 'passed' for key in group)
         lines += [
-            '<div class="flex-auto border border-silver rounded p2 m1">',
-            f'<div class="h6 navy caps mb1">Stage {index:02}</div>',
-            f'<div class="h4 bold mb1">{heading}</div>',
-            f'<div class="h6 navy mb2">{group_passed}/{len(group)} passed</div>',
+            '<div class="col-2 flex-auto border border-blue rounded p1 m1">',
+            f'<div class="h6 navy caps m0 mb1">Stage {index:02}</div>',
+            f'<div class="h5 bold m0 mb1">{heading}</div>',
+            f'<div class="h6 navy m0 mb2">{group_passed}/{len(group)} passed</div>',
         ]
         for key, label in group.items():
             symbol, text, tint = STATUS[statuses.get(key, 'unknown')]
             lines.append(
                 f'<div class="mb1"><span class="{tint} bold mr1">{symbol}</span>'
-                f'{label}<span class="block h6 navy ml2">{text}</span></div>'
+                f'{label}<span class="block h6 navy m0 ml2">{text}</span></div>'
             )
         lines.append('</div>')
     lines.append('</div>')
@@ -190,7 +190,7 @@ def render(statuses, updated='just now', notice='', artifacts=None):
     if notice:
         refresh = 'Updates stopped'
     lines += [
-        '<div class="border-top border-silver pt2 h6 navy">',
+        '<div class="border-top border-blue pt2 h6 navy m0">',
         f'Python 3.12 · pb-elastic · {refresh} · Updated {escape(updated)}',
         '<div class="mt1">109 selected API tests · Source secret scan · '
         'Packages validated, never published</div></div></div>',
