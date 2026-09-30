@@ -101,7 +101,9 @@ class ReportTests(unittest.TestCase):
             patch(
                 'report.step_for', side_effect=lambda key: snapshots[0][key]
             ),
-            patch('report.time.sleep', side_effect=lambda _: snapshots.pop(0)),
+            patch(
+                'report.time.sleep', side_effect=lambda _: snapshots.pop(0)
+            ) as sleep,
             patch('report.publish') as publish,
             patch(
                 'report.subprocess.run',
@@ -112,6 +114,7 @@ class ReportTests(unittest.TestCase):
             ),
         ):
             main()
+        sleep.assert_called_once_with(60)
         self.assertEqual(publish.call_count, 2)
         self.assertEqual(
             publish.call_args_list[0].args[0]['install'], 'running'
