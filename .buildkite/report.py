@@ -186,7 +186,7 @@ def render(statuses, updated='just now', notice='', artifacts=None):
         lines.append(
             '<div class="mb2">' + ' &nbsp; · &nbsp; '.join(links) + '</div>'
         )
-    refresh = 'Final snapshot' if done else 'Refreshes about every 3s'
+    refresh = 'Final snapshot' if done else 'Refreshes about every 1m'
     if notice:
         refresh = 'Updates stopped'
     lines += [
@@ -271,7 +271,7 @@ def main():
                 publish(statuses, artifacts=artifacts)
                 if complete(statuses):
                     return
-                time.sleep(3)
+                time.sleep(60)
         except (subprocess.SubprocessError, ValueError) as error:
             publish(
                 statuses,
